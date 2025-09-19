@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API = 'https://ecom-server-coxu.onrender.com'
+const API = 'https://ecom-client-6jyd.onrender.com'
 
 const getAllProducts = () => axios.get(`${API}/products/all`)
 const addNewProduct = (product: any) => axios.post(`${API}/products/add`, product)
