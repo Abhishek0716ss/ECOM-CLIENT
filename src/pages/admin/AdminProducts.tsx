@@ -1,4 +1,3 @@
-
 import {
     AlertDialog,
     AlertDialogContent,
@@ -18,12 +17,13 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import React, { useEffect, useRef, useState } from "react"
-import { addNewProduct, deleteProduct, getAllProducts } from "@/api/api"
+// import { addNewProduct, deleteProduct, getAllProducts } from "@/api/api"
 import { toast } from "sonner"
 import Loading from "@/components/Loading"
 import type { AdminProductType } from "@/types"
 import { Input } from "@/components/ui/input"
 import { Label } from "@radix-ui/react-label"
+import { addNewProduct, deleteProduct, getAllProducts } from "@/api/api"
 
 
 const AdminProducts = () => {
