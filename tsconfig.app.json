@@ -14,7 +14,13 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-
+    //  i copy pasted this
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
