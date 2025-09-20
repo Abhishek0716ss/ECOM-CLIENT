@@ -2,7 +2,6 @@ import {
     AlertDialog,
     AlertDialogContent,
     AlertDialogDescription,
-     
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
@@ -17,19 +16,19 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import React, { useEffect, useRef, useState } from "react"
-// import { addNewProduct, deleteProduct, getAllProducts } from "@/api/api"
+import { addNewProduct, deleteProduct, getAllProducts } from "@/api/api"
 import { toast } from "sonner"
 import Loading from "@/components/Loading"
 import type { AdminProductType } from "@/types"
 import { Input } from "@/components/ui/input"
 import { Label } from "@radix-ui/react-label"
-import { addNewProduct, deleteProduct, getAllProducts } from "@/api/api"
-
 
 const AdminProducts = () => {
     const [products, setProducts] = useState<AdminProductType[]>([])
     const [loading, setLoading] = useState(true)
     const [addModel, showAddModel] = useState(false)
+    const [editModel, showEditModel] = useState(false)
+    const [selectedProduct, setSelectedProduct] = useState<AdminProductType | null>(null)
 
     const nameRef = useRef<HTMLInputElement>(null)
     const descriptionRef = useRef<HTMLInputElement>(null)
@@ -37,6 +36,13 @@ const AdminProducts = () => {
     const tagsRef = useRef<HTMLInputElement>(null)
     const stockRef = useRef<HTMLInputElement>(null)
     const priceRef = useRef<HTMLInputElement>(null)
+
+    const editNameRef = useRef<HTMLInputElement>(null)
+    const editDescriptionRef = useRef<HTMLInputElement>(null)
+    const editCategoryRef = useRef<HTMLInputElement>(null)
+    const editTagsRef = useRef<HTMLInputElement>(null)
+    const editStockRef = useRef<HTMLInputElement>(null)
+    const editPriceRef = useRef<HTMLInputElement>(null)
 
     const fetchdata = async () => {
         try {
@@ -50,7 +56,6 @@ const AdminProducts = () => {
             setLoading(false)
         }
     }
-    
     const handleDelete = async (id: string) => {
         try {
             const response = await deleteProduct(id)
@@ -82,6 +87,30 @@ const AdminProducts = () => {
             toast.error("Error while adding Product !")
         } finally {
             showAddModel(false)
+        }
+    }
+    const handleEdit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedProduct) return
+        const updatedProduct = {
+            ...selectedProduct,
+            name: editNameRef.current?.value || "",
+            description: editDescriptionRef.current?.value || "",
+            category: editCategoryRef.current?.value || "",
+            tags: editTagsRef.current?.value || "",
+            stock: Number(editStockRef.current?.value),
+            price: Number(editPriceRef.current?.value),
+        }
+        try {
+            const response = await addNewProduct(updatedProduct)
+            if (response.status === 200) {
+                toast.success("Product Updated")
+                fetchdata()
+            }
+        } catch (error) {
+            toast.error("Error while updating Product !")
+        } finally {
+            showEditModel(false)
         }
     }
     useEffect(() => {
@@ -129,7 +158,7 @@ const AdminProducts = () => {
                                     <TableCell>{product.stock}</TableCell>
                                     <TableCell>{product.price}</TableCell>
                                     <TableCell className="flex w-full justify-end items-center gap-2">
-                                        <Button className="bg-blue-600 hover:bg-blue-500 cursor-pointer">
+                                        <Button className="bg-blue-600 hover:bg-blue-500 cursor-pointer" onClick={() => { setSelectedProduct(product); showEditModel(true) }}>
                                             <Pencil />
                                         </Button>
                                         <Button className="bg-red-600 hover:bg-red-500 cursor-pointer" onClick={() => handleDelete(product.id)}>
@@ -153,75 +182,74 @@ const AdminProducts = () => {
                                 <div className="flex flex-col gap-6">
                                     <div className="grid gap-2">
                                         <Label htmlFor="name">Name</Label>
-                                        <Input
-                                            id="name"
-                                            type="text"
-                                            placeholder="Phone"
-                                            ref={nameRef}
-                                            required
-                                        />
+                                        <Input id="name" type="text" placeholder="Phone" ref={nameRef} required />
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="description">Description</Label>
-                                        <Input
-                                            id="description"
-                                            type="text"
-                                            placeholder="Test Product"
-                                            ref={descriptionRef}
-                                            required
-                                        />
+                                        <Input id="description" type="text" placeholder="Test Product" ref={descriptionRef} required />
                                     </div>
-
                                     <div className="grid gap-2">
                                         <Label htmlFor="category">Category</Label>
-                                        <Input
-                                            id="Cescription"
-                                            type="text"
-                                            placeholder="Electronics"
-                                            ref={categoryRef}
-                                            required
-                                        />
+                                        <Input id="Cescription" type="text" placeholder="Electronics" ref={categoryRef} required />
                                     </div>
-
                                     <div className="grid gap-2">
                                         <Label htmlFor="tags">Tags</Label>
-                                        <Input
-                                            id="tags"
-                                            type="text"
-                                            placeholder="Tag1,Tag2"
-                                            ref={tagsRef}
-                                            required
-                                        />
+                                        <Input id="tags" type="text" placeholder="Tag1,Tag2" ref={tagsRef} required />
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="price">Price</Label>
-                                        <Input
-                                            id="price"
-                                            type="number"
-                                            placeholder="100.00"
-                                            ref={priceRef}
-                                            required
-                                        />
+                                        <Input id="price" type="number" placeholder="100.00" ref={priceRef} required />
                                     </div>
-
                                     <div className="grid gap-2">
                                         <Label htmlFor="stock">Stock</Label>
-                                        <Input
-                                            id="stock"
-                                            type="number"
-                                            placeholder="10"
-                                            ref={stockRef}
-                                            required
-                                        />
+                                        <Input id="stock" type="number" placeholder="10" ref={stockRef} required />
                                     </div>
                                 </div>
-                                <div className="flex flex-row flex-1">
-                                    <Button className="bg-red-600 w-1/2 hover:bg-red-500" onClick={() => showAddModel(false)}>
-                                        Cancel
-                                    </Button>
-                                    <Button className="bg-green-600 hover:bg-green-500 w-1/2" type="submit">
-                                        Add
-                                    </Button>
+                                <div className="flex flex-row flex-1 gap-2 mt-4">
+                                    <Button className="bg-red-600 w-1/2 hover:bg-red-500" type="button" onClick={() => showAddModel(false)}>Cancel</Button>
+                                    <Button className="bg-green-600 hover:bg-green-500 w-1/2" type="submit">Add</Button>
+                                </div>
+                            </form>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={editModel}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Edit Product</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            <form onSubmit={handleEdit}>
+                                <div className="flex flex-col gap-6">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="editname">Name</Label>
+                                        <Input id="editname" type="text" defaultValue={selectedProduct?.name} ref={editNameRef} required />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="editdescription">Description</Label>
+                                        <Input id="editdescription" type="text" defaultValue={selectedProduct?.description} ref={editDescriptionRef} required />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="editcategory">Category</Label>
+                                        <Input id="editcategory" type="text" defaultValue={selectedProduct?.category} ref={editCategoryRef} required />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edittags">Tags</Label>
+                                        <Input id="edittags" type="text" defaultValue={selectedProduct?.tags} ref={editTagsRef} required />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="editprice">Price</Label>
+                                        <Input id="editprice" type="number" defaultValue={selectedProduct?.price} ref={editPriceRef} required />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="editstock">Stock</Label>
+                                        <Input id="editstock" type="number" defaultValue={selectedProduct?.stock} ref={editStockRef} required />
+                                    </div>
+                                </div>
+                                <div className="flex flex-row flex-1 gap-2 mt-4">
+                                    <Button className="bg-red-600 w-1/2 hover:bg-red-500"  type="button" onClick={() => showEditModel(false)}>Cancel</Button>
+                                    <Button className="bg-green-600 hover:bg-green-500 w-1/2" type="submit">Update</Button>
                                 </div>
                             </form>
                         </AlertDialogDescription>

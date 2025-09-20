@@ -1,4 +1,12 @@
-// src/pages/admin/AdminOrders.tsx
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
+import { Pencil, Trash2 } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -7,101 +15,115 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Trash2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
+import { getAllOrders, updateOrderStatus, deleteOrder } from "@/api/api"
 import { toast } from "sonner"
-import { getAllOrders, deleteOrder, updateOrderStatus } from "@/api/api"
-import type { AdminOrderType } from "@/types"
 import Loading from "@/components/Loading"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import type { OrderType } from "@/types"
+
+
 
 const AdminOrders = () => {
-  const [orders, setOrders] = useState<AdminOrderType[]>([])
+  const [orders, setOrders] = useState<OrderType[]>([])
   const [loading, setLoading] = useState(true)
+  const [editModel, showEditModel] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<OrderType | null>(null)
+  const [editStatus, setEditStatus] = useState<OrderType["status"]>("PENDING")
 
-  // Fetch orders from API
-  const fetchData = async () => {
+  const fetchOrders = async () => {
     try {
-      const res = await getAllOrders()
-      console.log("Orders API response:", res.data) // debug
-      setOrders(res.data.data || []) // safe access
-    } catch (err) {
-      console.error("Error fetching orders:", err)
-      toast.error("Error fetching orders")
+      const response = await getAllOrders()
+      if (response.status === 200) {
+        setOrders(response.data)
+      }
+    } catch {
+      toast.error("Error while fetching orders")
     } finally {
       setLoading(false)
     }
   }
 
-  // Delete an order
   const handleDelete = async (id: string) => {
     try {
-      await deleteOrder(id)
-      toast.success("Order deleted")
-      fetchData()
-    } catch (err) {
-      console.error("Error deleting order:", err)
-      toast.error("Error deleting order")
+      const response = await deleteOrder(id)
+      if (response.status === 200) {
+        toast.success("Order Deleted!")
+        fetchOrders()
+      }
+    } catch {
+      toast.error("Error while deleting order")
     }
   }
 
-  // Update order status
-  const handleStatusChange = async (id: string, status: string) => {
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedOrder) return
     try {
-      await updateOrderStatus(id, status)
-      toast.success("Order status updated")
-      fetchData()
-    } catch (err) {
-      console.error("Error updating status:", err)
-      toast.error("Error updating status")
+      const response = await updateOrderStatus(selectedOrder.id, editStatus)
+      if (response.status === 200) {
+        toast.success("Order Status Updated")
+        fetchOrders()
+      }
+    } catch {
+      toast.error("Error while updating order status!")
+    } finally {
+      showEditModel(false)
     }
   }
 
   useEffect(() => {
-    fetchData()
+    fetchOrders()
   }, [])
 
   if (loading) return <Loading />
 
   return (
-    <div className="mt-4 border-2 h-full w-full flex flex-col">
-      <div className="flex justify-between items-center h-12 shadow px-2 text-primary">
-        <span className="font-bold">Admin Orders</span>
+    <div className="mt-4 border-2 round-sm h-full w-full flex flex-col">
+      <div className="flex w-[98svw] h-12 justify-between items-center text-lg shadow-lg px-2 text-primary">
+        <div className="w-1/2 font-bold">Admin Orders</div>
       </div>
 
-      {orders && orders.length > 0 ? (
+      {orders.length === 0 ? (
+        <div>No orders available</div>
+      ) : (
         <Table>
           <TableHeader className="bg-primary">
             <TableRow>
               <TableHead className="text-white">User ID</TableHead>
-              <TableHead className="text-white">Products</TableHead>
-              <TableHead className="text-white">Total</TableHead>
+              <TableHead className="text-white">Total Amount</TableHead>
               <TableHead className="text-white">Status</TableHead>
+              <TableHead className="text-white">Created At</TableHead>
               <TableHead className="text-white text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {orders.map((o) => (
-              <TableRow key={o.id}>
-                <TableCell>{o.userId}</TableCell>
-                <TableCell>{o.productNames?.join(", ")}</TableCell>
-                <TableCell>${o.totalAmount}</TableCell>
-                <TableCell>
-                  <select
-                    className="border rounded px-2 py-1"
-                    value={o.status}
-                    onChange={(e) => handleStatusChange(o.id, e.target.value)}
+            {orders.map((order, index) => (
+              <TableRow key={index}>
+                <TableCell>{order.userId}</TableCell>
+                <TableCell>${order.totalAmount.toFixed(2)}</TableCell>
+                <TableCell>{order.status}</TableCell>
+                <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
+                <TableCell className="flex justify-end gap-2">
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-500"
+                    onClick={() => {
+                      setSelectedOrder(order)
+                      setEditStatus(order.status)
+                      showEditModel(true)
+                    }}
                   >
-                    <option value="pending">Pending</option>
-                    <option value="shipped">Shipped</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </TableCell>
-                <TableCell className="flex justify-end">
+                    <Pencil />
+                  </Button>
                   <Button
                     className="bg-red-600 hover:bg-red-500"
-                    onClick={() => handleDelete(o.id)}
+                    onClick={() => handleDelete(order.id)}
                   >
                     <Trash2 />
                   </Button>
@@ -110,9 +132,37 @@ const AdminOrders = () => {
             ))}
           </TableBody>
         </Table>
-      ) : (
-        <div className="p-4 text-center text-gray-500">No orders available</div>
       )}
+
+      {/* Edit Status Modal */}
+      <AlertDialog open={editModel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Edit Order Status</AlertDialogTitle>
+            <AlertDialogDescription>
+              <form onSubmit={handleEdit}>
+                <div className="flex flex-col gap-4">
+                  <Select value={editStatus} onValueChange={(val: OrderType["status"]) => setEditStatus(val)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PENDING">PENDING</SelectItem>
+                      <SelectItem value="SHIPPED">SHIPPED</SelectItem>
+                      <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+                      <SelectItem value="DELIVERED">DELIVERED</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button type="button" className="bg-red-600 w-1/2" onClick={() => showEditModel(false)}>Cancel</Button>
+                  <Button type="submit" className="bg-green-600 w-1/2">Update</Button>
+                </div>
+              </form>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

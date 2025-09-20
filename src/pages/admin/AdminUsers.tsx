@@ -1,31 +1,68 @@
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "@/components/ui/table"
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2 } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { Pencil, Plus, Trash2 } from "lucide-react"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import React, { useEffect, useRef, useState } from "react"
+import { getAllUsers, addUser, editUser, deleteUser } from "@/api/api"
 import { toast } from "sonner"
-import { getAllUsers, addNewUser, deleteUser } from "@/api/api"
-import type { AdminUserType } from "@/types"
 import Loading from "@/components/Loading"
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import type { AdminUserType } from "@/types"
 import { Input } from "@/components/ui/input"
 import { Label } from "@radix-ui/react-label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const AdminUsers = () => {
   const [users, setUsers] = useState<AdminUserType[]>([])
   const [loading, setLoading] = useState(true)
   const [addModel, showAddModel] = useState(false)
+  const [editModel, showEditModel] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<AdminUserType | null>(null)
+  const [role, setRole] = useState<"ADMIN" | "USER">("USER")
+  const [editRole, setEditRole] = useState<"ADMIN" | "USER">("USER")
+
 
   const nameRef = useRef<HTMLInputElement>(null)
   const emailRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
+  const streetRef = useRef<HTMLInputElement>(null)
+  const cityRef = useRef<HTMLInputElement>(null)
+  const zipRef = useRef<HTMLInputElement>(null)
 
-  const fetchData = async () => {
+  // refs for edit form
+  const editNameRef = useRef<HTMLInputElement>(null)
+  const editEmailRef = useRef<HTMLInputElement>(null)
+  const editPasswordRef = useRef<HTMLInputElement>(null)
+  const editStreetRef = useRef<HTMLInputElement>(null)
+  const editCityRef = useRef<HTMLInputElement>(null)
+  const editZipRef = useRef<HTMLInputElement>(null)
+
+  const fetchdata = async () => {
     try {
-      const res = await getAllUsers()
-      setUsers(res.data)
+      const response = await getAllUsers()
+      if (response.status === 200) {
+        setUsers(response.data)
+      }
     } catch {
-      toast.error("Error fetching users")
+      toast.error("Error while fetching Users")
     } finally {
       setLoading(false)
     }
@@ -33,11 +70,13 @@ const AdminUsers = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteUser(id)
-      toast.success("User deleted")
-      fetchData()
+      const response = await deleteUser(id)
+      if (response.status === 200) {
+        toast.success("User Deleted!")
+        fetchdata()
+      }
     } catch {
-      toast.error("Error deleting user")
+      toast.error("Error while deleting User")
     }
   }
 
@@ -46,31 +85,74 @@ const AdminUsers = () => {
     const newUser = {
       name: nameRef.current?.value || "",
       email: emailRef.current?.value || "",
-      role: "user",
+      password: passwordRef.current?.value || "",
+      street: streetRef.current?.value || "",
+      city: cityRef.current?.value || "",
+      zip: zipRef.current?.value || "",
+      roles: role,
     }
     try {
-      await addNewUser(newUser)
-      toast.success("User added")
-      fetchData()
+      const response = await addUser(newUser)
+      if (response.status === 200) {
+        toast.success("User Added")
+        fetchdata()
+      }
     } catch {
-      toast.error("Error adding user")
+      toast.error("Error while adding User!")
     } finally {
       showAddModel(false)
     }
   }
 
-  useEffect(() => { fetchData() }, [])
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedUser) return
+    const updatedUser = {
+      ...selectedUser,
+      name: editNameRef.current?.value || "",
+      email: editEmailRef.current?.value || "",
+      password: editPasswordRef.current?.value || "",
+      street: editStreetRef.current?.value || "",
+      city: editCityRef.current?.value || "",
+      zip: editZipRef.current?.value || "",
+      roles: editRole,
+    }
+    try {
+      const response = await editUser(selectedUser.id, updatedUser)
+      if (response.status === 200) {
+        toast.success("User Updated")
+        fetchdata()
+      }
+    } catch {
+      toast.error("Error while updating User!")
+    } finally {
+      showEditModel(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchdata()
+  }, [])
 
   if (loading) return <Loading />
 
   return (
-    <div className="mt-4 border-2 h-full w-full flex flex-col">
-      <div className="flex justify-between items-center h-12 shadow px-2 text-primary">
-        <span className="font-bold">Admin Users</span>
-        <Button className="bg-green-600 hover:bg-green-500" onClick={() => showAddModel(true)}>
-          <Plus /> Add User
-        </Button>
+    <div className="mt-4 border-2 round-sm h-full w-full flex flex-col">
+      <div className="flex w-[98svw] h-12 justify-between items-center text-lg shadow-lg px-2 text-primary">
+        <div className="w-1/2 font-bold">Admin Users</div>
+        <div className="w-1/2 flex justify-end items-center">
+          <Button
+            className="bg-green-600 hover:bg-green-500 rounded-sm"
+            onClick={() => {
+              showAddModel(true)
+              setRole("USER")
+            }}
+          >
+            <Plus /> Add User
+          </Button>
+        </div>
       </div>
+
       {users.length === 0 ? (
         <div>No users available</div>
       ) : (
@@ -79,18 +161,33 @@ const AdminUsers = () => {
             <TableRow>
               <TableHead className="text-white">Name</TableHead>
               <TableHead className="text-white">Email</TableHead>
+              <TableHead className="text-white">City</TableHead>
               <TableHead className="text-white">Role</TableHead>
               <TableHead className="text-white text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map(u => (
-              <TableRow key={u.id}>
-                <TableCell>{u.name}</TableCell>
-                <TableCell>{u.email}</TableCell>
-                <TableCell>{u.role}</TableCell>
-                <TableCell className="flex justify-end">
-                  <Button className="bg-red-600 hover:bg-red-500" onClick={() => handleDelete(u.id)}>
+            {users.map((user, index) => (
+              <TableRow key={index}>
+                <TableCell>{user.name}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{user.city}</TableCell>
+                <TableCell>{user.roles}</TableCell>
+                <TableCell className="flex justify-end gap-2">
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-500"
+                    onClick={() => {
+                      setSelectedUser(user)
+                      setEditRole(user.roles)
+                      showEditModel(true)
+                    }}
+                  >
+                    <Pencil />
+                  </Button>
+                  <Button
+                    className="bg-red-600 hover:bg-red-500"
+                    onClick={() => handleDelete(user.id)}
+                  >
                     <Trash2 />
                   </Button>
                 </TableCell>
@@ -100,23 +197,92 @@ const AdminUsers = () => {
         </Table>
       )}
 
+
       <AlertDialog open={addModel}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Add User</AlertDialogTitle>
             <AlertDialogDescription>
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <div>
+              <form onSubmit={handleSubmit}>
+                <div className="flex flex-col gap-4">
                   <Label>Name</Label>
-                  <Input type="text" ref={nameRef} required />
-                </div>
-                <div>
+                  <Input ref={nameRef} required />
+
                   <Label>Email</Label>
                   <Input type="email" ref={emailRef} required />
+
+                  <Label>Password</Label>
+                  <Input type="password" ref={passwordRef} required />
+
+                  <Label>Street</Label>
+                  <Input ref={streetRef} />
+
+                  <Label>City</Label>
+                  <Input ref={cityRef} />
+
+                  <Label>Zip</Label>
+                  <Input ref={zipRef} />
+
+                  <Label>Role</Label>
+                  <Select value={role} onValueChange={(val: "ADMIN" | "USER") => setRole(val)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USER">USER</SelectItem>
+                      <SelectItem value="ADMIN">ADMIN</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="flex gap-2">
-                  <Button className="w-1/2 bg-red-600" onClick={() => showAddModel(false)}>Cancel</Button>
-                  <Button className="w-1/2 bg-green-600" type="submit">Add</Button>
+                <div className="flex gap-2 mt-4">
+                  <Button type="button" className="bg-red-600 w-1/2" onClick={() => showAddModel(false)}>Cancel</Button>
+                  <Button type="submit" className="bg-green-600 w-1/2">Add</Button>
+                </div>
+              </form>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={editModel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Edit User</AlertDialogTitle>
+            <AlertDialogDescription>
+              <form onSubmit={handleEdit}>
+                <div className="flex flex-col gap-4">
+                  <Label>Name</Label>
+                  <Input ref={editNameRef} defaultValue={selectedUser?.name} required />
+
+                  <Label>Email</Label>
+                  <Input ref={editEmailRef} defaultValue={selectedUser?.email} required />
+
+                  <Label>Password</Label>
+                  <Input ref={editPasswordRef} type="password" defaultValue={selectedUser?.password} required />
+
+                  <Label>Street</Label>
+                  <Input ref={editStreetRef} defaultValue={selectedUser?.street} />
+
+                  <Label>City</Label>
+                  <Input ref={editCityRef} defaultValue={selectedUser?.city} />
+
+                  <Label>Zip</Label>
+                  <Input ref={editZipRef} defaultValue={selectedUser?.zip} />
+
+                  <Label>Role</Label>
+                  <Select value={editRole} onValueChange={(val: "ADMIN" | "USER") => setEditRole(val)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USER">USER</SelectItem>
+                      <SelectItem value="ADMIN">ADMIN</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button type="button" className="bg-red-600 w-1/2" onClick={() => showEditModel(false)}>Cancel</Button>
+                  <Button type="submit" className="bg-green-600 w-1/2">Update</Button>
                 </div>
               </form>
             </AlertDialogDescription>
