@@ -17,4 +17,5 @@ export { getAllUsers, addNewUser, deleteUser }
 const getAllOrders = () => axios.get(`${API}/orders/all`)
 const updateOrderStatus = (id: string, status: string) => axios.put(`${API}/orders/order/update/${id}`, { status })
 const deleteOrder = (id: string) => axios.delete(`${API}/orders/order/delete/${id}`)
-export { getAllOrders, updateOrderStatus }
+export { getAllOrders, updateOrderStatus , deleteOrder }
+
