@@ -50,6 +50,7 @@ const AdminProducts = () => {
             setLoading(false)
         }
     }
+    
     const handleDelete = async (id: string) => {
         try {
             const response = await deleteProduct(id)

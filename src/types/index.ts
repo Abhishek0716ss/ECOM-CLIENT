@@ -1,31 +1,24 @@
-
-
-type AdminProductType = {
-    id: string,
-    name: string,
-    description: string,
-    category: string,
-    tags: string,
-    price: number,
-    stock: number
+export type AdminProductType = {
+  id: string
+  name: string
+  description: string
+  category: string
+  tags: string
+  stock: number
+  price: number
 }
 
-type AddProductType = {
-    name: string,
-    description: string,
-    category: string,
-    tags: string,
-    price: number,
-    stock: number
+export type AdminUserType = {
+  id: string
+  name: string
+  email: string
+  role: "user" | "admin"
 }
 
-
-export type { AdminProductType, AddProductType }
-
-//   "id": "string",
-//   "name": "string",
-//   "description": "string",
-//   "category": "string",
-//   "tags": "string",
-//   "price": 0,
-//   "stock": 0
+export type AdminOrderType = {
+  id: string
+  userId: string
+  productNames: string[]
+  totalAmount: number
+  status: "pending" | "shipped" | "delivered" | "cancelled"
+}
