@@ -1,7 +1,12 @@
-import axios from 'axios'
+ 
+import axios from "axios"
+
+export const API = axios.create({
+  baseURL: " https://ecom-client-6jyd.onrender.com", // 👈 must be your backend URL
+})
 
 // const API = 'https://ecom-server-coxu.onrender.com'
-const API = 'http://localhost:5173'
+// const API = 'http://localhost:5173'
 
 
 const authLogin = (logindata: any) => axios.post(`${API}/users/login`, logindata)
